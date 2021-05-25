@@ -1,3 +1,4 @@
+import pandas as pd
 import numpy as np
 import pywt
 from functools import partial, reduce
@@ -119,4 +120,28 @@ def imra(mra_coeffs):
         https://doi.org/10.2307/2965551
     """
     return reduce(lambda x, y: x + y, mra_coeffs)
+
+def mra8(data):
+    '''computes MODWT with Least Asymmetric 8 wavelet'''
+    c = mra(data, 'sym8', transform='dwt')
+    return c
+
+def sum_scales(c):
+    '''sums wavelet coefficients from adjacent time scales'''
+    csum = [c[i] + c[i+1] for i in range(0, len(c), 2)]
+    scales = [int(len(csum[i-1])/(i*4)) for i in range(1, len(csum))]
+    scales.insert(0, len(c[0]))
+    return csum, scales
+
+def pd_read_from_drive(site_id='FLX_JP-Swl'):
+    '''reads csv from google drive url into pandas dataframe'''
+    if site_id == 'FLX_JP-Swl': # urls could be stored as a dict {site_id : url}
+        url = "https://drive.google.com/file/d/1Pudof9T3_TOxpd5eY2F9ZjyvGxFub4Rg/view?usp=sharing"
+    elif site_id == 'FLX_JP-BBY':
+        url = "https://drive.google.com/file/d/1bMn9xCFZJ8Z1xVZmJ-Z8Xu0AH8xskyYs/view?usp=sharing"
+    else: 
+        raise ValueError("not a valid site_id!") # could be KeyError with dict
+    file_id=url.split('/')[-2]
+    dwn_url='https://drive.google.com/uc?id=' + file_id
+    return pd.read_csv(dwn_url)
 
