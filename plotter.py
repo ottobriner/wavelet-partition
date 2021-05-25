@@ -1,0 +1,52 @@
+import numpy as np
+from matplotlib import pyplot as plt
+from matplotlib.dates import DateFormatter
+import matplotlib.dates as mdates
+
+def plot_wave(date, c, ylabel = 'wavelet power', xlabel = 'date', title = 'wavelet details', figsize=(12,12)):
+    fig, ax = plt.subplots(len(c), 1, figsize=figsize)
+
+    # add a big axis, hide frame
+    bigax = fig.add_subplot(111, frameon=False)
+    # hide tick and tick label of the big axis
+    bigax.tick_params(labelcolor='none', which='both', top=False, bottom=False, left=False, right=False)
+    bigax.set_ylabel(ylabel)
+    bigax.set_title(title)
+
+    for i in range(len(c)):
+        ax[i].plot(date, c[i], 'k-')
+
+    ax[len(c)-1].set_xlabel(xlabel)
+    plt.tight_layout()
+    plt.show()
+    return
+
+def plot_reconst(date, data, c, scales, ylabel='data', xlabel = 'date', filename = None):
+    
+    fig, ax = plt.subplots(len(c), 1, figsize=(12,10))
+
+    # add a big axis, hide frame
+    bigax = fig.add_subplot(111, frameon=False)
+    # hide tick and tick label of the big axis
+    bigax.tick_params(labelcolor='none', which='both', top=False, bottom=False, left=False, right=False)
+    bigax.set_ylabel(ylabel)
+    
+    for i in range(len(c)):
+        ax[len(c)-1-i].plot(date[:scales[i]], data[:scales[i]], 'k.',
+                          date[:scales[i]], c[i][:scales[i]] + data[:scales[i]].mean())
+
+    ax[0].set(title="{} and wavelet detail".format(ylabel))
+    ax[0].legend([ylabel, 'wavelet detail'])
+    ax[-1].set_xlabel(xlabel)
+    plt.tight_layout()
+    
+    
+    if filename is not None:
+        plt.savefig(filename)
+    
+    plt.show()
+    return
+
+
+    
+
