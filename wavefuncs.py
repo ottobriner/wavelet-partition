@@ -135,13 +135,41 @@ def sum_scales(c):
 
 def pd_read_from_drive(site_id='FLX_JP-Swl'):
     '''reads csv from google drive url into pandas dataframe'''
-    if site_id == 'FLX_JP-Swl': # urls could be stored as a dict {site_id : url}
+    
+    site_urls = {
+        'site_id': ['FLX_JP-Swl', 'FLX_JP-BBY'],
+        'url': ["https://drive.google.com/file/d/1Pudof9T3_TOxpd5eY2F9ZjyvGxFub4Rg/view?usp=sharing",
+        "https://drive.google.com/file/d/1bMn9xCFZJ8Z1xVZmJ-Z8Xu0AH8xskyYs/view?usp=sharing"]
+    }
+    
+    # TODO use dict above
+    if site_id == 'FLX_JP-Swl': 
         url = "https://drive.google.com/file/d/1Pudof9T3_TOxpd5eY2F9ZjyvGxFub4Rg/view?usp=sharing"
     elif site_id == 'FLX_JP-BBY':
         url = "https://drive.google.com/file/d/1bMn9xCFZJ8Z1xVZmJ-Z8Xu0AH8xskyYs/view?usp=sharing"
     else: 
         raise ValueError("not a valid site_id!") # could be KeyError with dict
+    
     file_id=url.split('/')[-2]
     dwn_url='https://drive.google.com/uc?id=' + file_id
     return pd.read_csv(dwn_url)
+
+def norm(data, method = 'poly1'):
+    '''normalizes pandas Series by polyfit or rolling mean'''
+    
+    if method == 'rolling':
+        norm = data - data.rolling(96).mean()
+    elif method == 'poly1':
+        p = np.polynomial.Polynomial.fit(range(len(data)), data, 1)
+        xp, yp = p.linspace(len(data))
+        norm = data - yp
+    elif method == 'poly2':
+        p = np.polynomial.Polynomial.fit(range(len(data)), data, 2)
+        xp, yp = p.linspace(len(data))
+        norm = data - yp
+    else:
+        norm = None
+    
+    return norm, [xp, yp]
+        
 
