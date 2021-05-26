@@ -3,6 +3,16 @@ from matplotlib import pyplot as plt
 from matplotlib.dates import DateFormatter
 import matplotlib.dates as mdates
 
+def scatterdate(date, data, xlabel='', ylabel='', title='', figsize=(12,6), c='k', s=4):
+    fig, ax = plt.subplots(figsize=(12, 6))
+    ax.scatter(date, data, c=c, s=s)
+    ax.set_ylabel(ylabel)
+    ax.set_xlabel(xlabel)
+    ax.set_title(title)
+    plt.tight_layout()
+    plt.show
+    return
+
 def wavelet(date, c, ylabel = 'wavelet power', xlabel = 'date', title = 'wavelet details', figsize=(12,12)):
     fig, ax = plt.subplots(len(c), 1, figsize=figsize)
 
