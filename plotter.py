@@ -3,7 +3,7 @@ from matplotlib import pyplot as plt
 from matplotlib.dates import DateFormatter
 import matplotlib.dates as mdates
 
-def plot_wave(date, c, ylabel = 'wavelet power', xlabel = 'date', title = 'wavelet details', figsize=(12,12)):
+def wavelet(date, c, ylabel = 'wavelet power', xlabel = 'date', title = 'wavelet details', figsize=(12,12)):
     fig, ax = plt.subplots(len(c), 1, figsize=figsize)
 
     # add a big axis, hide frame
@@ -21,7 +21,7 @@ def plot_wave(date, c, ylabel = 'wavelet power', xlabel = 'date', title = 'wavel
     plt.show()
     return
 
-def plot_reconst(date, data, c, scales, ylabel='data', xlabel = 'date', filename = None):
+def reconst(date, data, c, scales, ylabel='data', xlabel = 'date', filename = None):
     
     fig, ax = plt.subplots(len(c), 1, figsize=(12,10))
 
@@ -47,6 +47,20 @@ def plot_reconst(date, data, c, scales, ylabel='data', xlabel = 'date', filename
     plt.show()
     return
 
+def scattercoef(X, Y, level=None, xlabel='', ylabel='', title='', figsize = (10, 10)):
+    '''takes two pandas DataFrames and plots scatter of wavelet coefficients'''
+    fig, ax = plt.subplots(figsize=figsize)
+    
+    if level is not None:
+        ax.scatter(X.iloc[:, level], Y.iloc[:, level], c='k', s=1)
+    else:
+        for j in range(X.shape[1]):
+            ax.scatter(X.iloc[:, j], Y.iloc[:, j], c='k', s=1)
+    
+    ax.set(xlabel=xlabel, ylabel=ylabel, title=title)
+    
+    plt.tight_layout()
+    plt.show()
 
     
 
