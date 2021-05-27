@@ -121,16 +121,31 @@ def imra(mra_coeffs):
     """
     return reduce(lambda x, y: x + y, mra_coeffs)
 
-def mra8(data):
-    '''computes MODWT with Least Asymmetric 8 wavelet'''
-    c = mra(data, 'sym8', transform='dwt')
+def mra8(data, wavelet='sym8', level=None, axis=-1, transform='dwt',
+         mode='symmetric'):
+    '''wrapper for mra() with defaults LA8 wavelet and symmetric signal extension mode
+    '''
+    kwargs = dict(wavelet=wavelet, axis=axis, transform=transform)
+    f = partial(mra, level=level, **kwargs)
+    
+    try:
+        c = [f(data[:, i]) for i in range(data.shape[-1])]
+    except:
+        c = f(data)
+    
     return c
 
 def sum_scales(c):
     '''sums wavelet coefficients from adjacent time scales'''
-    csum = [c[i] + c[i+1] for i in range(0, len(c), 2)]
-    scales = [int(len(csum[i-1])/(i*4)) for i in range(1, len(csum))]
+    
+    if (len(c) % 2) ==0:
+        csum = [c[i] + c[i+1] for i in range(0, len(c), 2)]
+    else:
+        raise ValueError('Cannot pair wavelet scales, number of scales is not even!')
+    
+    scales = [int(len(csum[i-1])/(i*4)) for i in range(1, len(csum))]    
     scales.insert(0, len(c[0]))
+    
     return csum, scales
 
 def pd_read_from_drive(site_id='FLX_JP-Swl'):

@@ -61,7 +61,9 @@ def scattercoef(X, Y, level=None, xlabel='', ylabel='', title='', figsize = (10,
     '''takes two pandas DataFrames and plots scatter of wavelet coefficients'''
     fig, ax = plt.subplots(figsize=figsize)
     
-    if level is not None:
+    if (len(X.shape) == 1) | (len(Y.shape) == 1):
+        ax.scatter(X, Y, c='k', s=1)
+    elif level is not None:
         ax.scatter(X.iloc[:, level], Y.iloc[:, level], c='k', s=1)
     else:
         for j in range(X.shape[1]):
