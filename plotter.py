@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 from matplotlib import pyplot as plt
 from matplotlib.dates import DateFormatter
 import matplotlib.dates as mdates
@@ -63,19 +64,19 @@ def wavelet(date, c, xlabel = 'date', ylabel = 'wavelet power',
     plt.show()
     return
 
-def reconst(date, data, c, scales, yp, xlabel = 'date', ylabel='data',
+def reconst(data, c, scales, zdate, yp, xlabel = 'date', ylabel='data',
             figsize=(12,10), filename = None):
-    '''Plots wavelet details and original data for specified time frames
+    '''Plots wavelet details and data at different time scales for specified date range
     Parameters
     ----------
-    date : array_like
-    	date of original data
-    data : array_like
+    data : pd.Series with DatetimeIndex
     	original data series
     c : list of ndarray
     	wavelet coefficients as returned by 'pywt.wavedec' or 'mra'
     scales : list of int
         specified timescales in indices
+    zdate : str
+      	date to center zoom
     yp : ndarray
     	y linspace of fit used for normalization
     xlabel, ylabel, title : str
@@ -88,6 +89,7 @@ def reconst(date, data, c, scales, yp, xlabel = 'date', ylabel='data',
     -----
     This sums wavelet detail and yp to align wavelet with data for plotting. 
     I'm not sure if that's physical or meaningful.
+    Time scales zoom centered on the same date.
     '''
     fig, ax = plt.subplots(len(c), 1, figsize=figsize)
 
@@ -98,8 +100,15 @@ def reconst(date, data, c, scales, yp, xlabel = 'date', ylabel='data',
     bigax.set_ylabel(ylabel)
     
     for i in range(len(c)):
-        ax[len(c)-1-i].plot(date[:scales[i]], data[:scales[i]], 'k.',
-                          date[:scales[i]], c[i][:scales[i]] + yp[:scales[i]])
+        
+        win = int(len(data.index)/((i+1)*4))
+        center = data.index.get_loc(pd.to_datetime(zdate))
+        
+        [start, stop] = [int(center-win/2),
+                         int(center+win/2)]
+    
+        ax[len(c)-1-i].plot(data.iloc[start:stop].index, data.iloc[start:stop], 'k.',
+                          data.iloc[start:stop].index, c[i][start:stop])
     
     ax[0].set(title="{} and wavelet detail".format(ylabel))
     ax[0].legend([ylabel, 'wavelet detail'])
