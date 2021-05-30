@@ -123,7 +123,16 @@ def imra(mra_coeffs):
 
 def mra8(data, wavelet='sym8', level=None, axis=-1, transform='dwt',
          mode='symmetric'):
-    '''wrapper for mra() with defaults LA8 wavelet and symmetric signal extension mode
+    '''wrapper for 'mra' with defaults LA8 wavelet and symmetric signal extension mode
+    Parameters
+    ----------
+    data : array_like
+    	data series
+    wavelet, level, axis, transform, mode
+    	passed to 'mra'    
+    Notes
+    -----
+    Tries to read several series as arrays, or reads single series as array.
     '''
     kwargs = dict(wavelet=wavelet, axis=axis, transform=transform)
     f = partial(mra, level=level, **kwargs)
@@ -136,7 +145,15 @@ def mra8(data, wavelet='sym8', level=None, axis=-1, transform='dwt',
     return c
 
 def sum_scales(c):
-    '''sums wavelet coefficients from adjacent time scales'''
+    '''Sums wavelet coefficients from adjacent time scales.
+    Parameters
+    ----------
+    c : list of ndarrays
+        wavelet coefficients as returned by 'pywt.wavedec' or 'mra'
+    Notes
+    -----
+    Scales are summed pair-wise. an odd len(c) throws error
+    '''
     
     if (len(c) % 2) ==0:
         csum = [c[i] + c[i+1] for i in range(0, len(c), 2)]
@@ -149,12 +166,21 @@ def sum_scales(c):
     return csum, scales
 
 def pd_read_from_drive(site_id='FLX_JP-Swl'):
-    '''reads csv from google drive url into pandas dataframe'''
+    '''Reads csv from google drive url into pandas dataframe.
+    Parameters
+    ----------
+    site_id : str
+        key to retrieve url from dict site_urls
+    '''
     
     site_urls = {
         'site_id': ['FLX_JP-Swl', 'FLX_JP-BBY'],
-        'url': ["https://drive.google.com/file/d/1Pudof9T3_TOxpd5eY2F9ZjyvGxFub4Rg/view?usp=sharing",
-        "https://drive.google.com/file/d/1bMn9xCFZJ8Z1xVZmJ-Z8Xu0AH8xskyYs/view?usp=sharing"]
+        'url': ['''https://drive.google.com/file/d/
+                1Pudof9T3_TOxpd5eY2F9ZjyvGxFub4Rg/view?usp=sharing
+                ''',
+                '''https://drive.google.com/file/d/
+                1bMn9xCFZJ8Z1xVZmJ-Z8Xu0AH8xskyYs/view?usp=sharing
+                ''']
     }
     
     # TODO use dict above
@@ -169,11 +195,31 @@ def pd_read_from_drive(site_id='FLX_JP-Swl'):
     dwn_url='https://drive.google.com/uc?id=' + file_id
     return pd.read_csv(dwn_url)
 
-def norm(data, method = 'poly1'):
-    '''normalizes pandas Series by polyfit or rolling mean'''
+def norm(data, method = 'poly1', window=96):
+    '''Normalizes array by polyfit or rolling mean.
+    Parameters
+    ----------
+    data : array_like
+        data series to be normalized
+    method : str
+        method for normalization
+        poly1: 1st order polynomial
+        poly2: 2nd order polynomial
+        rolling: rolling mean
+    window : int
+        window for rolling mean
+    Returns
+    -------
+    norm : array_like
+        normalized series
+    [xy, yp] : list of array_like
+        [x, y] linspace coordinates of fit 
+    '''
     
     if method == 'rolling':
-        norm = data - data.rolling(96).mean()
+        yp = data.rolling(window).mean()
+        norm = data - yp
+        xp = range(len(yp))
     elif method == 'poly1':
         p = np.polynomial.Polynomial.fit(range(len(data)), data, 1)
         xp, yp = p.linspace(len(data))

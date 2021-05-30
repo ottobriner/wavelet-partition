@@ -3,7 +3,24 @@ from matplotlib import pyplot as plt
 from matplotlib.dates import DateFormatter
 import matplotlib.dates as mdates
 
-def scatterdate(date, data, xlabel='', ylabel='', title='', figsize=(12,6), c='k', s=4):
+def scatterdate(date, data, xlabel='', ylabel='', title='', c='k', s=4, 
+                figsize=(12,6), filename=None):
+    '''Scatters data vs date.
+    Parameters
+    ----------
+    date : array_like
+    	date of data
+    data : array_like
+    	data series to be plotted
+    xlabel, ylabel, title, c : str
+        xlabel, ylabel, title, marker color, passed to plt
+    s : int
+        size of marker, passed to plt
+    figsize : tuple
+        size of plot, passed to plt
+    filename : str or None
+        passed to plt.savefig
+    '''
     fig, ax = plt.subplots(figsize=(12, 6))
     ax.scatter(date, data, c=c, s=s)
     ax.set_ylabel(ylabel)
@@ -13,7 +30,22 @@ def scatterdate(date, data, xlabel='', ylabel='', title='', figsize=(12,6), c='k
     plt.show
     return
 
-def wavelet(date, c, ylabel = 'wavelet power', xlabel = 'date', title = 'wavelet details', figsize=(12,12)):
+def wavelet(date, c, xlabel = 'date', ylabel = 'wavelet power', 
+            title = 'wavelet details', figsize=(12,12)):
+    '''Plots wavelet details vs date at all
+    Parameters
+    ----------
+    date : array_like
+    	date of original data
+    c : list of ndarray
+    	wavelet coefficients as returned by 'pywt.wavedec' or 'mra'
+    xlabel, ylabel, title : str
+        passed to plt
+    figsize : tuple
+        size of plot, passed to plt
+    filename : str or None
+        passed to plt.savefig
+    '''
     fig, ax = plt.subplots(len(c), 1, figsize=figsize)
 
     # add a big axis, hide frame
@@ -31,9 +63,33 @@ def wavelet(date, c, ylabel = 'wavelet power', xlabel = 'date', title = 'wavelet
     plt.show()
     return
 
-def reconst(date, data, c, scales, ylabel='data', xlabel = 'date', filename = None):
-    
-    fig, ax = plt.subplots(len(c), 1, figsize=(12,10))
+def reconst(date, data, c, scales, yp, xlabel = 'date', ylabel='data',
+            figsize=(12,10), filename = None):
+    '''Plots wavelet details and original data for specified time frames
+    Parameters
+    ----------
+    date : array_like
+    	date of original data
+    data : array_like
+    	original data series
+    c : list of ndarray
+    	wavelet coefficients as returned by 'pywt.wavedec' or 'mra'
+    scales : list of int
+        specified timescales in indices
+    yp : ndarray
+    	y linspace of fit used for normalization
+    xlabel, ylabel, title : str
+        passed to plt
+    figsize : tuple
+        size of plot, passed to plt
+    filename : str or None
+        passed to plt.savefig
+    Notes
+    -----
+    This sums wavelet detail and yp to align wavelet with data for plotting. 
+    I'm not sure if that's physical or meaningful.
+    '''
+    fig, ax = plt.subplots(len(c), 1, figsize=figsize)
 
     # add a big axis, hide frame
     bigax = fig.add_subplot(111, frameon=False)
@@ -43,8 +99,8 @@ def reconst(date, data, c, scales, ylabel='data', xlabel = 'date', filename = No
     
     for i in range(len(c)):
         ax[len(c)-1-i].plot(date[:scales[i]], data[:scales[i]], 'k.',
-                          date[:scales[i]], c[i][:scales[i]] + data[:scales[i]].mean())
-
+                          date[:scales[i]], c[i][:scales[i]] + yp[:scales[i]])
+    
     ax[0].set(title="{} and wavelet detail".format(ylabel))
     ax[0].legend([ylabel, 'wavelet detail'])
     ax[-1].set_xlabel(xlabel)
@@ -57,8 +113,25 @@ def reconst(date, data, c, scales, ylabel='data', xlabel = 'date', filename = No
     plt.show()
     return
 
-def scattercoef(X, Y, level=None, xlabel='', ylabel='', title='', figsize = (10, 10)):
-    '''takes two pandas DataFrames and plots scatter of wavelet coefficients'''
+def scattercoef(X, Y, level=None, xlabel='', ylabel='', title='', 
+                figsize = (10, 10), filename=None):
+    '''Plots scatter of wavelet coefficients with fit.
+    Parameters
+    ----------
+    X, Y : lists of ndarrays
+        wavelet coefficients as returned by 'pywt.wavedec' or 'mra'
+    xp, yp : ndarrays
+        (x, y) linspace coordinates for fit of X vs Y
+    level : int
+        decomposition level to plot. if None, plots all levels
+    xlabel, ylabel, title : str
+        passed to plt
+    figsize : tuple
+        size of plot, passed to plt
+    filename : str or None
+        passed to plt.savefig
+    '''
+    
     fig, ax = plt.subplots(figsize=figsize)
     
     if (len(X.shape) == 1) | (len(Y.shape) == 1):
@@ -72,6 +145,10 @@ def scattercoef(X, Y, level=None, xlabel='', ylabel='', title='', figsize = (10,
     ax.set(xlabel=xlabel, ylabel=ylabel, title=title)
     
     plt.tight_layout()
+    
+    if filename is not None:
+        plt.savefig(filename)
+    
     plt.show()
 
     
