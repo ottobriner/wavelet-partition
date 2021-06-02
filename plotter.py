@@ -122,7 +122,7 @@ def reconst(data, c, scales, zdate, yp, xlabel = 'date', ylabel='data',
     plt.show()
     return
 
-def scattercoef(X, Y, level=None, xlabel='', ylabel='', title='', 
+def scattercoef(X, Y, xp, yp, rmsd, level=None, xlabel='', ylabel='', title='', 
                 figsize = (10, 10), filename=None):
     '''Plots scatter of wavelet coefficients with fit.
     Parameters
@@ -131,6 +131,8 @@ def scattercoef(X, Y, level=None, xlabel='', ylabel='', title='',
         wavelet coefficients as returned by 'pywt.wavedec' or 'mra'
     xp, yp : ndarrays
         (x, y) linspace coordinates for fit of X vs Y
+    rmsd : float
+        root-mean-square deviation of fit
     level : int
         decomposition level to plot. if None, plots all levels
     xlabel, ylabel, title : str
@@ -140,18 +142,35 @@ def scattercoef(X, Y, level=None, xlabel='', ylabel='', title='',
     filename : str or None
         passed to plt.savefig
     '''
-    
-    fig, ax = plt.subplots(figsize=figsize)
+
+#    fig, ax = plt.subplots(figsize=figsize, sharex=True, sharey=True)
     
     if (len(X.shape) == 1) | (len(Y.shape) == 1):
+        fig, ax = plt.subplots(figsize=figsize, sharex=True, sharey=True)
         ax.scatter(X, Y, c='k', s=1)
+        ax.plot(xp, yp, 'r-')
     elif level is not None:
+        fig, ax = plt.subplots(figsize=figsize, sharex=True, sharey=True)
         ax.scatter(X.iloc[:, level], Y.iloc[:, level], c='k', s=1)
+        ax.plot(xp, yp, 'r-')
     else:
+        fig, ax = plt.subplots(X.shape[1] // 2, 2, figsize=figsize, sharex=True, sharey=True)
+        
+        # add a big axis, hide frame
+        bigax = fig.add_subplot(111, frameon=False)
+        # hide tick and tick label of the big axis
+        bigax.tick_params(labelcolor='none', which='both', top=False, bottom=False,
+                          left=False, right=False)
+        bigax.set(xlabel=xlabel, ylabel=ylabel)
+
+        
         for j in range(X.shape[1]):
-            ax.scatter(X.iloc[:, j], Y.iloc[:, j], c='k', s=1)
-    
-    ax.set(xlabel=xlabel, ylabel=ylabel, title=title)
+            ax[j // 2, j % 2].scatter(X.iloc[:, j], Y.iloc[:, j], c='k', s=1)
+            ax[j // 2, j % 2].plot(xp, yp, 'r-', 
+                                   xp, yp + rmsd*3, 'r--',
+                                   xp, yp - rmsd*3, 'r--')
+            ax[1-(j // 2), 1-(j % 2)].set(title='Scale: {0}-{1}h'.format(2**(2*j),2**(2*j)*2))
+            
     
     plt.tight_layout()
     

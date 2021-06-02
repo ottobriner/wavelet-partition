@@ -232,5 +232,4 @@ def norm(data, method = 'poly1', window=96):
         norm = None
     
     return norm, [xp, yp]
-        
 
