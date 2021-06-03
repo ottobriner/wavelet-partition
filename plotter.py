@@ -64,7 +64,7 @@ def wavelet(date, c, xlabel = 'date', ylabel = 'wavelet power',
     plt.show()
     return
 
-def reconst(data, c, scales, zdate, yp, xlabel = 'date', ylabel='data',
+def reconst(data, c, zdate, yp, xlabel = 'date', ylabel='data',
             figsize=(12,10), filename = None):
     '''Plots wavelet details and data at different time scales for specified date range
     Parameters
@@ -107,8 +107,17 @@ def reconst(data, c, scales, zdate, yp, xlabel = 'date', ylabel='data',
         [start, stop] = [int(center-win/2),
                          int(center+win/2)]
     
-        ax[len(c)-1-i].plot(data.iloc[start:stop].index, data.iloc[start:stop], 'k.',
-                          data.iloc[start:stop].index, c[i][start:stop])
+        ax[len(c)-1-i].plot(data.iloc[start:stop].index, data['FCH4_F'].iloc[start:stop],
+                            	'k.',
+                          data.loc[data['FCH4_w{}d'.format(i)]==0].index, 
+                          data.loc[data.loc[data['FCH4_w{}d'.format(i)]==0].index,
+                                  'FCH4_w{}'.format(i)],
+                          'g.',
+                          data.loc[data['FCH4_w{}d'.format(i)]==0].index, 
+                          data.loc[data.loc[data['FCH4_w{}d'.format(i)]==0].index,
+                                  'FCH4_w{}'.format(i)],
+                          'b.',
+                          )
     
     ax[0].set(title="{} and wavelet detail".format(ylabel))
     ax[0].legend([ylabel, 'wavelet detail'])
