@@ -2,6 +2,8 @@ import pandas as pd
 import numpy as np
 import pywt
 from functools import partial, reduce
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error
 
 def mra(data, wavelet, level=None, axis=-1, transform='swt',
         mode='periodization'):
@@ -123,7 +125,8 @@ def imra(mra_coeffs):
 
 def mra8(data, wavelet='sym8', level=None, axis=-1, transform='dwt',
          mode='symmetric'):
-    '''wrapper for 'mra' with defaults LA8 wavelet and symmetric signal extension mode
+    '''wrapper for 'mra' with de
+    faults LA8 wavelet and symmetric signal extension mode
     Parameters
     ----------
     data : array_like
@@ -215,8 +218,19 @@ def norm(data, method = 'poly1', window=96):
     [xy, yp] : list of array_like
         [x, y] linspace coordinates of fit 
     '''
+    xp = range(len(data))
     
-    if method == 'rolling':
+    if method == 'linreg':
+        print(data.shape)
+        data = data.reshape(-1, 1)
+        print(data.shape)
+        print(data)
+        X = np.arange(len(data))
+        print(X.shape)
+        LS = LinearRegression().fit(X.reshape(-1, 1), data)
+        yp = LS.predict(range(len(data)))
+        norm = data - yp
+    elif method == 'rolling':
         yp = data.rolling(window).mean()
         norm = data - yp
         xp = range(len(yp))
@@ -233,3 +247,98 @@ def norm(data, method = 'poly1', window=96):
     
     return norm, [xp, yp]
 
+def proc(df):
+    '''Normalizes and wavelet transforms, adds to new columns in df
+    '''
+    
+    nM, _ = norm(df.loc[:, 'FCH4_F'].to_numpy())
+    nLE, _ = norm(df.loc[:, 'LE_F'].to_numpy())
+    
+    df.loc[:, 'FCH4_Fn'] = nM
+    df.loc[:, 'LE_Fn'] = nLE
+    
+    # df.loc[dfw.index, 'TA_Fn'] = nT
+    
+    [cM, cLE] = mra8(df.loc[:, ['FCH4_Fn', 'LE_Fn']].to_numpy(), level=7, axis=0)
+    
+    # sum wavelet scales
+    csumM, _ = sum_scales(cM)
+    csumLE, _ = sum_scales(cLE)
+    
+    for j in range(len(csumM)):
+        df.loc[:, 'FCH4_w{}'.format(j)] = csumM[j]
+        df.loc[:, 'LE_w{}'.format(j)] = csumLE[j]
+    
+    return df
+
+def get_regr(df, Xcols, Ycols):
+    '''Returns RMSD of linear regression between two sets of columns of df'''
+    
+    Xflat = np.concatenate(df[Xcols].to_numpy()).reshape(-1, 1)
+    Yflat = np.concatenate(df[Ycols].to_numpy()).reshape(-1, 1)
+    
+    regr = LinearRegression().fit(Xflat, Yflat)
+    
+    pred = regr.predict(Xflat)
+    rmsd = np.sqrt(mean_squared_error(Yflat, pred))    
+    
+    return pred, rmsd
+
+def part(df, pred, rmsd):
+    '''Partitions diffusive and ebullitive fluxes by comparing to computed RMSD
+    Parameters
+    ----------
+    df : pandas DataFrame
+        date-indexed, with fluxes to be partitioned
+    Returns
+    -------
+    df : pandas DataFrame
+        df with partitioned fluxes added
+    '''
+    
+    cols = df.columns[df.columns.str.startswith('FCH4_w')]
+    
+    df.loc[:, 'pdiff'] = np.ones(len(df))
+        
+    for j in range(len(cols)):
+        predw = pred[j*len(df):j*len(df) + len(df)]
+        df.loc[:, 'diff{}'.format(j)] = np.ones(len(df))
+    
+        wave = df.loc[:, 'FCH4_w{}'.format(j)].to_numpy().reshape(-1, 1)
+        maskmore = wave > predw - 3*rmsd
+        maskless = wave < predw + 3*rmsd
+        df['diff{}'.format(j)] = (maskless & maskmore).astype(int)
+        
+        for i in range(len(df)):
+            if df.loc[df.index[i], 'diff{}'.format(j)] == 1:
+                if df.loc[df.index[i], 'pdiff'] == 0.:
+                    continue
+                else:
+                    df.loc[df.index[i], 'pdiff'] = 1.
+            else:
+                df.loc[df.index[i], 'pdiff'] = 0.
+    # colsd = df.columns[df.columns.str.startswith('diff')]
+    # df['pdiff'] = df.where(df[colsd].any(), other = 0.)
+    
+    df.loc[:, 'rmsd'] = np.ones(len(df)) * rmsd
+    
+    return df
+
+def wave(df):
+    # normalize and wavelet transform, add back to df
+    dfp = proc(df)
+    
+    # choose columns for partitioning
+    Xcols = dfp.columns[dfp.columns.str.startswith('LE_w')]
+    Ycols = dfp.columns[dfp.columns.str.startswith('FCH4_w')]
+    
+    # calc regression
+    pred, rmsd = get_regr(dfp, Xcols, Ycols)
+    
+    # partition
+    dfp = part(dfp, pred, rmsd)
+    
+    # write rmsd back to df
+#    dfp.loc[:, 'rmsd'] = dfp.loc[:, 'rmsd']
+    
+    return dfp

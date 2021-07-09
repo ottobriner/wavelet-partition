@@ -4,7 +4,7 @@ from matplotlib import pyplot as plt
 from matplotlib.dates import DateFormatter
 import matplotlib.dates as mdates
 
-def scatterdate(date, data, xlabel='', ylabel='', title='', c='k', s=4, 
+def date(date, data, xlabel='', ylabel='', title='', c='k', s=4, 
                 figsize=(12,6), filename=None):
     '''Scatters data vs date.
     Parameters
@@ -115,7 +115,7 @@ def reconst(data, c, zdate, yp, xlabel = 'date', ylabel='data',
                           'g.',
                           data.loc[data['FCH4_w{}d'.format(i)]==0].index, 
                           data.loc[data.loc[data['FCH4_w{}d'.format(i)]==0].index,
-                                  'FCH4_w{}'.format(i)],
+                                  'FCH4_w{}'.format(i)],	
                           'b.',
                           )
     
@@ -131,7 +131,7 @@ def reconst(data, c, zdate, yp, xlabel = 'date', ylabel='data',
     plt.show()
     return
 
-def scattercoef(X, Y, xp, yp, rmsd, level=None, xlabel='', ylabel='', title='', 
+def coef(X, Y, xp, yp, rmsd, level=None, xlabel='', ylabel='', title='', 
                 figsize = (10, 10), filename=None):
     '''Plots scatter of wavelet coefficients with fit.
     Parameters
