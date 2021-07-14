@@ -188,5 +188,33 @@ def coef(X, Y, xp, yp, rmsd, level=None, xlabel='', ylabel='', title='',
     
     plt.show()
 
-    
+def iwata7(X, Y, pred, rmsd, xlabel='', ylabel='', title='', 
+                figsize = (12,12), filename=None):
+    '''Plots scatter of wavelet coefficients with fit.
+    Parameters
+    ----------
+    rmsd : float
+        root-mean-square deviation of fit
+    xlabel, ylabel, title : str
+        passed to plt
+    figsize : tuple
+        size of plot, passed to plt
+    filename : str or None
+        passed to plt.savefig
+    '''
+    fig, ax = plt.subplots(1, 1, figsize = figsize)
 
+    ax.plot(X, Y, 'k.',
+            X, pred, 'r-',
+            X, pred + 3*rmsd, 'r--',
+            X, pred - 3*rmsd, 'r--')
+    
+    ax.set(xlabel=xlabel, ylabel=ylabel, title=title)
+    
+    
+    plt.tight_layout()
+    
+    if filename is not None:
+        plt.savefig(filename)
+    
+    plt.show()

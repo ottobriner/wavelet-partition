@@ -3,7 +3,7 @@ import numpy as np
 import pywt
 from functools import partial, reduce
 from sklearn.linear_model import LinearRegression
-from sklearn.metrics import mean_squared_error
+from sklearn.metrics import mean_squared_error, r2_score
 
 def mra(data, wavelet, level=None, axis=-1, transform='swt',
         mode='periodization'):
@@ -168,6 +168,38 @@ def sum_scales(c):
     
     return csum, scales
 
+def read(site_id='FLX_JP-Swl', method='url'):
+    '''Reads csv from file or google drive url into pandas dataframe.
+    Parameters
+    ----------
+    site_id : str
+        key to retrieve url from dict site_urls
+    method : str
+        source for csv
+    '''
+    if method == 'file':
+        if site_id == 'FLX_JP-Swl':
+            path = ''
+        elif site_id == 'FLX_JP-BBY':
+            path = 'data/FLUXNET-CH4/FLX_JP-BBY_FLUXNET-CH4_2015-2018_1-1/FLX_JP-BBY_FLUXNET-CH4_HH_2015-2018_1-1.csv'
+        df = pd.read_csv(path)
+        return df
+    elif method == 'url':
+        # TODO use dict above
+        if site_id == 'FLX_JP-Swl': 
+            url = "https://drive.google.com/file/d/1Pudof9T3_TOxpd5eY2F9ZjyvGxFub4Rg/view?usp=sharing"
+        elif site_id == 'FLX_JP-BBY':
+            url = "https://drive.google.com/file/d/1bMn9xCFZJ8Z1xVZmJ-Z8Xu0AH8xskyYs/view?usp=sharing"
+        else: 
+            raise ValueError("not a valid site_id!") # could be KeyError with dict
+        
+        file_id=url.split('/')[-2]
+        dwn_url='https://drive.google.com/uc?id=' + file_id
+        df = pd.read_csv(dwn_url)
+        return df
+    else: 
+        raise ValueError('not a valid read method!')
+
 def pd_read_from_drive(site_id='FLX_JP-Swl'):
     '''Reads csv from google drive url into pandas dataframe.
     Parameters
@@ -281,10 +313,11 @@ def get_regr(df, Xcols, Ycols):
     
     pred = regr.predict(Xflat)
     rmsd = np.sqrt(mean_squared_error(Yflat, pred))    
+    r2 = r2_score(Yflat, pred)
     
-    return pred, rmsd
+    return pred, [Xflat, Yflat], rmsd, r2
 
-def part(df, pred, rmsd):
+def part(df, pred, rmsd, r2):
     '''Partitions diffusive and ebullitive fluxes by comparing to computed RMSD
     Parameters
     ----------
@@ -321,6 +354,7 @@ def part(df, pred, rmsd):
     # df['pdiff'] = df.where(df[colsd].any(), other = 0.)
     
     df.loc[:, 'rmsd'] = np.ones(len(df)) * rmsd
+    df.loc[:, 'r2'] = np.ones(len(df)) * r2
     
     return df
 
@@ -333,10 +367,10 @@ def wave(df):
     Ycols = dfp.columns[dfp.columns.str.startswith('FCH4_w')]
     
     # calc regression
-    pred, rmsd = get_regr(dfp, Xcols, Ycols)
+    pred, [Xflat, Yflat], rmsd, r2 = get_regr(dfp, Xcols, Ycols)
     
     # partition
-    dfp = part(dfp, pred, rmsd)
+    dfp = part(dfp, pred, rmsd, r2)
     
     # write rmsd back to df
 #    dfp.loc[:, 'rmsd'] = dfp.loc[:, 'rmsd']
