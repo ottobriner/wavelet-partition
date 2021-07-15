@@ -125,8 +125,7 @@ def imra(mra_coeffs):
 
 def mra8(data, wavelet='sym8', level=None, axis=-1, transform='dwt',
          mode='symmetric'):
-    '''wrapper for 'mra' with de
-    faults LA8 wavelet and symmetric signal extension mode
+    '''wrapper for 'mra' defaults LA8 wavelet and symmetric extension mode
     Parameters
     ----------
     data : array_like
@@ -357,6 +356,24 @@ def part(df, pred, rmsd, r2):
     df.loc[:, 'r2'] = np.ones(len(df)) * r2
     
     return df
+
+def chop(df):
+    start = df['FCH4_F'].first_valid_index()
+    windows = []
+
+    while start < df.index[-1]:
+        start = df.loc[start:, 'FCH4_F'].first_valid_index()
+        window = pd.date_range(start, periods = 1920, freq = '30min')
+
+        if window[-1] < df.index[-1]:
+            if df.loc[window, 'FCH4_F'].isna().any():
+                print('window {} to {} contains missing data'.format(window[0], window[-1]))
+            else:
+                print('appending window {} to {} to windows'.format(window[0], window[-1]))    
+                windows.append(window)
+
+        start = window[-1]
+    return windows
 
 def wave(df):
     # normalize and wavelet transform, add back to df
