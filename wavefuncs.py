@@ -178,7 +178,7 @@ def read(site_id='FLX_JP-Swl', method='url'):
     '''
     if method == 'file':
         if site_id == 'FLX_JP-Swl':
-            path = ''
+            path = 'data/FLUXNET-CH4/FLX_JP-SwL_FLUXNET-CH4_2016-2016_1-1/FLX_JP-SwL_FLUXNET-CH4_HH_2016-2016_1-1.csv'
         elif site_id == 'FLX_JP-BBY':
             path = 'data/FLUXNET-CH4/FLX_JP-BBY_FLUXNET-CH4_2015-2018_1-1/FLX_JP-BBY_FLUXNET-CH4_HH_2015-2018_1-1.csv'
         df = pd.read_csv(path)

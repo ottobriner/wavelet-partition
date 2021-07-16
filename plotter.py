@@ -218,3 +218,29 @@ def iwata7(X, Y, pred, rmsd, xlabel='', ylabel='', title='',
         plt.savefig(filename)
     
     plt.show()
+
+def date_rmsd(df, title = '', filename=None):
+    fig, ax = plt.subplots(figsize = (12,6))
+    
+    ax.plot(df.index, df.loc[:, 'FCH4_F'], 'k.', label='FCH4')
+    ax.set(xlabel = 'date', ylabel = 'FCH4, gap-filled', title=title)
+
+    axr = ax.twinx()
+    axr.grid(False)
+    axr.yaxis.set_label_position('right')
+    axr.yaxis.tick_right()
+    axr.plot(df.index, df.loc[:, 'rmsd'], 'r-', label='RMSD')
+    axr.plot(df.index, df.loc[:, 'r2'], 'g-', label='r2')
+    axr.set_ylim([0, df.loc[:, 'rmsd'].max() + 1])
+    axr.set_ylabel('RMSD')
+
+    # ask matplotlib for the plotted objects and their labels
+    lines, labels = ax.get_legend_handles_labels()
+    linesr, labelsr = axr.get_legend_handles_labels()
+    ax.legend(lines + linesr, labels + labelsr, loc=2)
+
+    plt.tight_layout()
+    
+    if filename is not None:
+        plt.savefig(filename)
+    
