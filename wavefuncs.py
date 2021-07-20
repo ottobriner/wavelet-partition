@@ -297,24 +297,47 @@ def proc(df):
     csumLE, _ = sum_scales(cLE)
     
     for j in range(len(csumM)):
-        df.loc[:, 'FCH4_w{}'.format(j)] = csumM[j]
-        df.loc[:, 'LE_w{}'.format(j)] = csumLE[j]
-    
+       df.loc[:, 'FCH4_w{}'.format(j)] = csumM[j]
+       df.loc[:, 'LE_w{}'.format(j)] = csumLE[j]
+       
     return df
 
-def get_regr(df, Xcols, Ycols):
-    '''Returns RMSD of linear regression between two sets of columns of df'''
+def get_regr(df, Xcol, Ycol):
+    '''Returns prediction and RMSD of lin regression between two columns
+    '''
     
-    Xflat = np.concatenate(df[Xcols].to_numpy()).reshape(-1, 1)
-    Yflat = np.concatenate(df[Ycols].to_numpy()).reshape(-1, 1)
+    X = df[Xcol].to_numpy().reshape(-1, 1)
+    Y = df[Ycol].to_numpy().reshape(-1, 1)
     
-    regr = LinearRegression().fit(Xflat, Yflat)
+    regr = LinearRegression().fit(X, Y)
     
-    pred = regr.predict(Xflat)
-    rmsd = np.sqrt(mean_squared_error(Yflat, pred))    
-    r2 = r2_score(Yflat, pred)
+    pred = regr.predict(X)
+    rmsd = np.sqrt(mean_squared_error(Y, pred))    
+    r2 = r2_score(Y, pred)
+
+    df.loc[:, 'rmsd'] = np.ones(len(df)) * rmsd
+    df.loc[:, 'r2'] = np.ones(len(df)) * r2
     
-    return pred, [Xflat, Yflat], rmsd, r2
+    return pred, rmsd, r2
+
+def get_regr_lump(df, Xcols, Ycols):
+    '''Returns prediction and RMSD of lin regression between two sets of columns
+    '''
+    
+    # lump columns to flattened arrays
+    X = np.concatenate(df[Xcols].to_numpy()).reshape(-1, 1)
+    Y = np.concatenate(df[Ycols].to_numpy()).reshape(-1, 1)
+    
+    regr = LinearRegression().fit(X, Y)
+    
+    pred = regr.predict(X)
+    rmsd = np.sqrt(mean_squared_error(Y, pred))    
+    r2 = r2_score(Y, pred)
+
+    df.loc[:, 'rmsd'] = np.ones(len(df)) * rmsd
+    df.loc[:, 'r2'] = np.ones(len(df)) * r2
+
+    return pred, rmsd, r2
 
 def part(df, pred, rmsd, r2):
     '''Partitions diffusive and ebullitive fluxes by comparing to computed RMSD
@@ -384,7 +407,7 @@ def wave(df):
     Ycols = dfp.columns[dfp.columns.str.startswith('FCH4_w')]
     
     # calc regression
-    pred, [Xflat, Yflat], rmsd, r2 = get_regr(dfp, Xcols, Ycols)
+    pred, rmsd, r2 = get_regr(dfp, Xcols, Ycols)
     
     # partition
     dfp = part(dfp, pred, rmsd, r2)

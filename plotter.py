@@ -219,7 +219,67 @@ def iwata7(X, Y, pred, rmsd, xlabel='', ylabel='', title='',
     
     plt.show()
 
-def date_rmsd(df, title = '', filename=None):
+def iwata7sep(X, Y, pred, rmsd, xlabel='', ylabel='', title='', 
+                figsize = (12,12), filename=None):
+    '''Plots scatter of wavelet coefficients with fit, treating scales separately.
+    Parameters
+    ----------
+    rmsd : float
+        root-mean-square deviation of fit
+    xlabel, ylabel, title : str
+        passed to plt
+    figsize : tuple
+        size of plot, passed to plt
+    filename : str or None
+        passed to plt.savefig
+    '''
+    fig, ax = plt.subplots(1, 1, figsize = figsize)
+
+    ax.plot(X, Y, 'k.',
+            X, pred, 'r-',
+            X, pred + 3*rmsd, 'r--',
+            X, pred - 3*rmsd, 'r--')
+    
+    ax.set(xlabel=xlabel, ylabel=ylabel, title=title)
+    
+    
+    plt.tight_layout()
+    
+    if filename is not None:
+        plt.savefig(filename)
+    
+    plt.show()
+def date_rmsd(df, title = '', filename=None, figsize=(14,7)):
+    fig, ax = plt.subplots(figsize = figsize)
+    
+    ax.plot(df.index, df.loc[:, 'FCH4_F'], 'k.', label='FCH4')
+    ax.set(xlabel = 'date', ylabel = 'FCH4, gap-filled', title=title)
+
+    axr = ax.twinx()
+    axr.grid(False)
+    axr.yaxis.set_label_position('right')
+    axr.yaxis.tick_right()
+    cols =  df.columns[df.columns.str.startswith('rmsd_')]
+
+    for j in range(len(cols)):
+        axr.plot(df.index, df.loc[:, cols[j]], label=f'RMSD, Scale {j}')
+             
+    # axr.set_ylim([0, df.loc[:, 'rmsd'].max() + 1])
+    axr.set_ylabel('RMSD')
+
+    # ask matplotlib for the plotted objects and their labels
+    lines, labels = ax.get_legend_handles_labels()
+    linesr, labelsr = axr.get_legend_handles_labels()
+    ax.legend(lines + linesr, labels + labelsr, loc=2)
+
+    plt.tight_layout()
+    
+    if filename is not None:
+        plt.savefig(filename)
+
+    plt.show()
+
+def date_rmsd_lump(df, title = '', filename=None):
     fig, ax = plt.subplots(figsize = (12,6))
     
     ax.plot(df.index, df.loc[:, 'FCH4_F'], 'k.', label='FCH4')
