@@ -315,8 +315,8 @@ def get_regr(df, Xcol, Ycol):
     rmsd = np.sqrt(mean_squared_error(Y, pred))    
     r2 = r2_score(Y, pred)
 
-    df.loc[:, 'rmsd'] = np.ones(len(df)) * rmsd
-    df.loc[:, 'r2'] = np.ones(len(df)) * r2
+    # df.loc[:, 'rmsd'] = np.ones(len(df)) * rmsd
+    # df.loc[:, 'r2'] = np.ones(len(df)) * r2
     
     return pred, rmsd, r2
 
@@ -334,10 +334,54 @@ def get_regr_lump(df, Xcols, Ycols):
     rmsd = np.sqrt(mean_squared_error(Y, pred))    
     r2 = r2_score(Y, pred)
 
-    df.loc[:, 'rmsd'] = np.ones(len(df)) * rmsd
-    df.loc[:, 'r2'] = np.ones(len(df)) * r2
+    # df.loc[:, 'rmsd'] = np.ones(len(df)) * rmsd
+    # df.loc[:, 'r2'] = np.ones(len(df)) * r2
 
     return pred, rmsd, r2
+
+def partition(df, windows, rmsd):
+    '''Partitions ebullitive fluxes by comparing to reference RMSD
+    '''
+
+    rmsd = rmsd[0].astype(float)        
+
+    cols = df.columns[df.columns.str.startswith('FCH4_w')]
+    preds = df.columns[df.columns.str.startswith('pred_')]
+
+    for window in windows:
+        wave_arr = df.loc[window, cols].to_numpy()
+        pred_arr = df.loc[window, preds].to_numpy()
+        
+        maskless = wave_arr < pred_arr + 3 * rmsd
+        maskmore = wave_arr > pred_arr - 3 * rmsd
+
+        df.loc[window, [f'ebull_{j}' for j in range(len(cols))]] = ~(maskless & maskmore)
+
+    # df.loc[:, 'rmsd'] = np.ones(len(df)) * rmsd
+    # df.loc[:, 'r2'] = np.ones(len(df)) * r2
+
+    # for j in range(len(cols)):
+    #     predw = pred[j*len(df):j*len(df) + len(df)]
+    #     df.loc[:, 'diff{}'.format(j)] = np.ones(len(df))
+    
+    #     wave = df.loc[:, 'FCH4_w{}'.format(j)].to_numpy().reshape(-1, 1)
+
+    #     maskmore = df[cols[j] > predw - 3*rmsd
+    #     maskless = wave < predw + 3*rmsd
+    #     df['diff{}'.format(j)] = (maskless & maskmore).astype(int)
+        
+    #     for i in range(len(df)):
+    #         if df.loc[df.index[i], 'diff{}'.format(j)] == 1:
+    #             if df.loc[df.index[i], 'pdiff'] == 0.:
+    #                 continue
+    #             else:
+    #                 df.loc[df.index[i], 'pdiff'] = 1.
+    #         else:
+    #             df.loc[df.index[i], 'pdiff'] = 0.
+    # # colsd = df.columns[df.columns.str.startswith('diff')]
+    # # df['pdiff'] = df.where(df[colsd].any(), other = 0.)
+        
+    return df
 
 def part(df, pred, rmsd, r2):
     '''Partitions diffusive and ebullitive fluxes by comparing to computed RMSD
@@ -380,7 +424,7 @@ def part(df, pred, rmsd, r2):
     
     return df
 
-def chop(df):
+def chop(df, verbose=False):
     start = df['FCH4_F'].first_valid_index()
     windows = []
 
@@ -390,9 +434,11 @@ def chop(df):
 
         if window[-1] < df.index[-1]:
             if df.loc[window, 'FCH4_F'].isna().any():
-                print('window {} to {} contains missing data'.format(window[0], window[-1]))
+                if verbose:
+                    print(f'window {window[0]} to {window[-1]} contains missing data')
             else:
-                print('appending window {} to {} to windows'.format(window[0], window[-1]))    
+                if verbose:
+                    print(f'appending window {window[0]} to {window[-1]} to windows')    
                 windows.append(window)
 
         start = window[-1]
