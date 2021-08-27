@@ -146,7 +146,7 @@ def mra8(data, wavelet='sym8', level=None, axis=-1, transform='dwt',
     
     return c
 
-def sum_scales(c):
+def sum_adjacent_scales(c):
     '''Sums wavelet coefficients from adjacent time scales.
     Parameters
     ----------
@@ -278,7 +278,7 @@ def norm(data, method = 'poly1', window=96):
     
     return norm, [xp, yp]
 
-def proc(df):
+def proc(df, level=7, sum_scales=False, wavelet='sym8'):
     '''Normalizes and wavelet transforms, adds to new columns in df
     '''
     
@@ -290,16 +290,20 @@ def proc(df):
     
     # df.loc[dfw.index, 'TA_Fn'] = nT
     
-    [cM, cLE] = mra8(df.loc[:, ['FCH4_Fn', 'LE_Fn']].to_numpy(), level=7, axis=0)
-    
-    # sum wavelet scales
-    csumM, _ = sum_scales(cM)
-    csumLE, _ = sum_scales(cLE)
-    
-    for j in range(len(csumM)):
-       df.loc[:, 'FCH4_w{}'.format(j)] = csumM[j]
-       df.loc[:, 'LE_w{}'.format(j)] = csumLE[j]
-       
+    [cM, cLE] = mra8(df.loc[:, ['FCH4_Fn', 'LE_Fn']].to_numpy(), level=level, wavelet=wavelet, axis=0)
+
+    if sum_scales:
+        # sum wavelet scales
+        csumM, _ = sum_adjacent_scales(cM)
+        csumLE, _ = sum_adjacent_scales(cLE)     
+        for j in range(len(csumM)):
+            df.loc[:, 'FCH4_w{}'.format(j)] = csumM[j]
+            df.loc[:, 'LE_w{}'.format(j)] = csumLE[j]
+    else:
+        for j in range(len(cM)):
+            df.loc[:, 'FCH4_w{}'.format(j)] = cM[j]
+            df.loc[:, 'LE_w{}'.format(j)] = cLE[j]
+            
     return df
 
 def get_regr(df, Xcol, Ycol):
@@ -424,13 +428,14 @@ def part(df, pred, rmsd, r2):
     
     return df
 
-def chop(df, verbose=False):
+def chop(df, samples=1920, verbose=False):
     start = df['FCH4_F'].first_valid_index()
     windows = []
 
     while start < df.index[-1]:
-        start = df.loc[start:, 'FCH4_F'].first_valid_index()
-        window = pd.date_range(start, periods = 1920, freq = '30min')
+        istart = df.index.get_loc(start) + 1
+        start = df.iloc[istart:]['FCH4_F'].first_valid_index()
+        window = pd.date_range(start, periods = samples, freq = '30min')
 
         if window[-1] < df.index[-1]:
             if df.loc[window, 'FCH4_F'].isna().any():
