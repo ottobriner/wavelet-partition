@@ -347,7 +347,7 @@ def partition(df, windows, rmsd):
     '''Partitions ebullitive fluxes by comparing to reference RMSD
     '''
 
-    rmsd = rmsd[0].astype(float)        
+    # rmsd = rmsd[0].astype(float)
 
     cols = df.columns[df.columns.str.startswith('FCH4_w')]
     preds = df.columns[df.columns.str.startswith('pred_')]
