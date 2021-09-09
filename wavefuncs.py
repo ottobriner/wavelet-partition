@@ -181,6 +181,12 @@ def read(site_id='FLX_JP-Swl', method='url'):
             path = 'data/FLUXNET-CH4/FLX_JP-SwL_FLUXNET-CH4_2016-2016_1-1/FLX_JP-SwL_FLUXNET-CH4_HH_2016-2016_1-1.csv'
         elif site_id == 'FLX_JP-BBY':
             path = 'data/FLUXNET-CH4/FLX_JP-BBY_FLUXNET-CH4_2015-2018_1-1/FLX_JP-BBY_FLUXNET-CH4_HH_2015-2018_1-1.csv'
+        elif site_id == 'FLX_US-TrS':
+            path = 'data/US-TrS_HH_202003010000_202010312330.csv'
+        elif site_id == 'FLX_US-Myb':
+            path = 'data/FLUXNET-CH4/FLX_US-Myb_FLUXNET-CH4_2010-2018_1-1/FLX_US-Myb_FLUXNET-CH4_HH_2010-2018_1-1.csv'
+        else:
+            path = ''
         df = pd.read_csv(path)
         return df
     elif method == 'url':
@@ -198,7 +204,7 @@ def read(site_id='FLX_JP-Swl', method='url'):
         return df
     else: 
         raise ValueError('not a valid read method!')
-
+    
 def pd_read_from_drive(site_id='FLX_JP-Swl'):
     '''Reads csv from google drive url into pandas dataframe.
     Parameters
@@ -428,17 +434,17 @@ def part(df, pred, rmsd, r2):
     
     return df
 
-def chop(df, samples=1920, verbose=False):
-    start = df['FCH4_F'].first_valid_index()
+def chop(df, samples=1920, col='FCH4_F', freq='30min', verbose=False):
+    start = df[col].first_valid_index()
     windows = []
 
     while start < df.index[-1]:
         istart = df.index.get_loc(start) + 1
-        start = df.iloc[istart:]['FCH4_F'].first_valid_index()
-        window = pd.date_range(start, periods = samples, freq = '30min')
+        start = df.iloc[istart:][col].first_valid_index()
+        window = pd.date_range(start, periods = samples, freq = freq)
 
         if window[-1] < df.index[-1]:
-            if df.loc[window, 'FCH4_F'].isna().any():
+            if df.loc[window, col].isna().any():
                 if verbose:
                     print(f'window {window[0]} to {window[-1]} contains missing data')
             else:
